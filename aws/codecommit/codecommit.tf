@@ -17,21 +17,9 @@ variable "repository_default_branch" {
 
 ### RESOURCES #########################################################
 
-# "Amazon SNS isn't currently compatible with FIFO queues."
-# See http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-subscribe-queue-sns-topic.html
-resource "aws_sqs_queue" "example" {
-  name_prefix = "codecommit-${var.repository_name}-"
-}
-
 resource "aws_sns_topic" "example" {
   name         = "codecommit-${var.repository_name}"
   display_name = "CodeCommit - ${var.repository_description}"
-}
-
-resource "aws_sns_topic_subscription" "example" {
-  topic_arn = "${aws_sns_topic.example.arn}"
-  protocol  = "sqs"
-  endpoint  = "${aws_sqs_queue.example.arn}"
 }
 
 resource "aws_codecommit_repository" "example" {
@@ -74,12 +62,4 @@ output "repository_topic_arn" {
 
 output "repository_topic_name" {
   value = "${aws_sns_topic.example.name}"
-}
-
-output "repository_queue_arn" {
-  value = "${aws_sqs_queue.example.arn}"
-}
-
-output "repository_queue_name" {
-  value = "${aws_sqs_queue.example.name}"
 }

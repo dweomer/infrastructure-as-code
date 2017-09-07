@@ -21,19 +21,11 @@ Parameters: ###########################################################
 Resources: ############################################################
 #######################################################################
 
-  Queue:
-    Type: AWS::SQS::Queue
-    Properties:
-      QueueName: !Join ['', ['codecommit-', !Ref 'RepositoryName']]
-
   Topic:
     Type: AWS::SNS::Topic
     Properties:
       TopicName: !Join ['', ['codecommit-', !Ref 'RepositoryName']]
       DisplayName: !Join ['', ['CodeCommit - ', !Ref 'RepositoryDescription']]
-      Subscription:
-        - Endpoint: !GetAtt 'Queue.Arn'
-          Protocol: sqs
 
   Repository:
     Type: AWS::CodeCommit::Repository
@@ -78,16 +70,4 @@ Outputs: ##############################################################
     Value: !GetAtt 'Topic.TopicName'
     Export:
       Name: !Join [ ":", [ !Ref "AWS::StackName", "Topic", "Name" ] ]
-
-  RepositoryQueueArn:
-    Description: Repository Queue ARN
-    Value: !GetAtt 'Queue.Arn'
-    Export:
-      Name: !Join [ ":", [ !Ref "AWS::StackName", "Queue", "ARN" ] ]
-
-  RepositoryQueueArn:
-    Description: Repository Queue Name
-    Value: !GetAtt 'Queue.QueueName'
-    Export:
-      Name: !Join [ ":", [ !Ref "AWS::StackName", "Queue", "Name" ] ]
 
