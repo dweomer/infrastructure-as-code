@@ -1,0 +1,93 @@
+### An example CodeCommit repository with triggers
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: An example CodeCommit repository.
+
+#######################################################################
+Parameters: ###########################################################
+#######################################################################
+
+  RepositoryName:
+    Default: example-cf
+    Description: Repository Name
+    Type: String
+
+  RepositoryDescription:
+    Default: Example Repository (CloudFormation)
+    Description: Repository Description
+    Type: String
+
+#######################################################################
+Resources: ############################################################
+#######################################################################
+
+  Queue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Join ['', ['codecommit-', !Ref 'RepositoryName']]
+
+  Topic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Join ['', ['codecommit-', !Ref 'RepositoryName']]
+      DisplayName: !Join ['', ['CodeCommit - ', !Ref 'RepositoryDescription']]
+      Subscription:
+        - Endpoint: !GetAtt 'Queue.Arn'
+          Protocol: sqs
+
+  Repository:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: !Ref 'RepositoryName'
+      RepositoryDescription: !Ref 'RepositoryDescription'
+      Triggers:
+        - Name: !Ref 'RepositoryName'
+          Events: ['all']
+          DestinationArn: !Ref 'Topic'
+
+#######################################################################
+Outputs: ##############################################################
+#######################################################################
+
+  RepositoryArn:
+    Description: Repository ARN
+    Value: !GetAtt 'Repository.Arn'
+    Export:
+      Name: !Join [ ":", [ !Ref "AWS::StackName", "ARN" ] ]
+
+  RepositoryUrlHttp:
+    Description: Repository URL (HTTP)
+    Value: !GetAtt 'Repository.CloneUrlHttp'
+    Export:
+      Name: !Join [ ":", [ !Ref "AWS::StackName", "URL", "HTTP" ] ]
+
+  RepositoryUrlSsh:
+    Description: Repository URL (SSH)
+    Value: !GetAtt 'Repository.CloneUrlSsh'
+    Export:
+      Name: !Join [ ":", [ !Ref "AWS::StackName", "URL", "SSH" ] ]
+
+  RepositoryTopicArn:
+    Description: Repository Topic ARN
+    Value: !Ref 'Topic'
+    Export:
+      Name: !Join [ ":", [ !Ref "AWS::StackName", "Topic", "ARN" ] ]
+
+  RepositoryTopicName:
+    Description: Repository Topic Name
+    Value: !GetAtt 'Topic.TopicName'
+    Export:
+      Name: !Join [ ":", [ !Ref "AWS::StackName", "Topic", "Name" ] ]
+
+  RepositoryQueueArn:
+    Description: Repository Queue ARN
+    Value: !GetAtt 'Queue.Arn'
+    Export:
+      Name: !Join [ ":", [ !Ref "AWS::StackName", "Queue", "ARN" ] ]
+
+  RepositoryQueueArn:
+    Description: Repository Queue Name
+    Value: !GetAtt 'Queue.QueueName'
+    Export:
+      Name: !Join [ ":", [ !Ref "AWS::StackName", "Queue", "Name" ] ]
+
