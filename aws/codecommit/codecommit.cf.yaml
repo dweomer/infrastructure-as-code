@@ -21,11 +21,50 @@ Parameters: ###########################################################
 Resources: ############################################################
 #######################################################################
 
+  Queue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Join ['', ['codecommit-', !Ref 'RepositoryName']]
+
   Topic:
     Type: AWS::SNS::Topic
     Properties:
       TopicName: !Join ['', ['codecommit-', !Ref 'RepositoryName']]
       DisplayName: !Join ['', ['CodeCommit - ', !Ref 'RepositoryDescription']]
+      Subscription:
+        - Endpoint: !GetAtt 'Queue.Arn'
+          Protocol: sqs
+
+  QueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref 'Queue'
+      PolicyDocument: !Sub
+        - |
+          {
+            "Version": "2012-10-17",
+            "Id": "${PolicyId}" ,
+            "Statement": [
+              {
+                "Sid": "Sid1234567890123",
+                "Effect": "Allow",
+                "Principal": {
+                  "AWS": "*"
+                },
+                "Action": "SQS:SendMessage",
+                "Resource": "${QueueArn}",
+                "Condition": {
+                  "ArnEquals": {
+                    "aws:SourceArn": "${TopicArn}"
+                  }
+                }
+              }
+            ]
+          }
+        - PolicyId: !Join ['/', [!GetAtt 'Queue.Arn', 'FromSNS']]
+          QueueArn: !GetAtt 'Queue.Arn'
+          TopicArn: !Ref 'Topic'
 
   Repository:
     Type: AWS::CodeCommit::Repository
@@ -70,4 +109,16 @@ Outputs: ##############################################################
     Value: !GetAtt 'Topic.TopicName'
     Export:
       Name: !Join [ ":", [ !Ref "AWS::StackName", "Topic", "Name" ] ]
+
+  RepositoryQueueArn:
+    Description: Repository Queue ARN
+    Value: !GetAtt 'Queue.Arn'
+    Export:
+      Name: !Join [ ":", [ !Ref "AWS::StackName", "Queue", "ARN" ] ]
+
+  RepositoryQueueName:
+    Description: Repository Queue Name
+    Value: !GetAtt 'Queue.QueueName'
+    Export:
+      Name: !Join [ ":", [ !Ref "AWS::StackName", "Queue", "Name" ] ]
 
