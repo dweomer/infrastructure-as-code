@@ -16,10 +16,10 @@ cat > ${TF_QUERY} <&0
 eval "$(jq -r '@sh "GITHUB_BASE_URL=\(.base_url) GITHUB_USERNAME=\(.username) GITHUB_TOKEN=\(.token)"' ${TF_QUERY})"
 
 http --body --ignore-stdin --json \
-    GET ${GITHUB_BASE_URL?required}/users/${GITHUB_USERNAME?required}/repos \
+    GET "${GITHUB_BASE_URL?required}/user/repos" \
     "Authorization:token ${GITHUB_TOKEN?required}" \
 > ${GH_RESPONSE}
 
 jq -n "{
-  repositories: \"$(jq -r '.[].name' ${GH_RESPONSE} | sort | xargs)\"
+  repositories: \"$(jq -r '.[].full_name' ${GH_RESPONSE} | sort | xargs)\"
 }" >&3
